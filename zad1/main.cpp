@@ -91,6 +91,87 @@ void calculateDistances(std::vector<Point>& points, float& M)
 // We need to traverse this matrix in order to find which points are connected (distance < M, merging zone)
 // In order to avoid creation of the same multiple points (for example point 1 with point 2 and point 2 with point 1) 
 // we need to remember which points were already visited
+// In order to achieve this we can use DFS algorithm
+
+
+// This function checks for points that are close enough to be merged and saves them to local vector toBeMerged
+// This vector is build for every point so we need to collect all of these distinct toBeMerged vectors (those with .size() > 1)
+void dfs(int startingPoint, std::vector<Point>& points, std::vector<bool>& visited, std::vector<int>& toBeMerged)
+{
+    // set current point as visited
+    visited[startingPoint] = true;
+    // add current point to the current merging group
+    toBeMerged.push_back(startingPoint + 1);
+
+    // for every point of the graph
+    for(int i=0; i<points.size(); ++i)
+    {
+        if(visited[i] || startingPoint == i)
+        {
+            continue;
+        }
+        
+        // if distance for startingPoint to the i-th point is 2  
+        if(points[startingPoint].distancesFromOtherPoints[i] == 2)
+        {
+            // recursively visit the i-th point and all its valid neighbors
+            dfs(i, points, visited, toBeMerged);
+        }
+    }
+}
+
+// This function collects these distinct toBeMerged vectors mentioned above
+std::vector<std::vector<int>> collectAllToBeMergedVectors(std::vector<Point>& points)
+{
+    std::vector<bool> visited(points.size(), false);
+    std::vector<std::vector<int>> result;
+
+    for(int i=0; i<points.size(); ++i)
+    {
+        if(visited[i])
+        {
+            continue;
+        }
+
+        std::vector<int> toBeMerged;
+        dfs(i, points, visited, toBeMerged);
+
+        // Check if a point has other points in <M proximity
+        if(toBeMerged.size() > 1)
+        {
+            result.push_back(toBeMerged);
+        }
+    }
+    return result;
+}
+
+std::vector<Point> merge(const std::vector<Point>& points, const std::vector<std::vector<int>>& result)
+{
+    std::vector<Point> mergedPoints;
+    const int startingId = points.size();
+
+    for(const std::vector<int>& group : result)
+    {
+        float xav = 0.0f;
+        float yav = 0.0f;
+        const int groupSize = group.size();
+
+        for(int memberId : group)
+        {
+            const int index = memberId - 1;
+            xav += points[index].x;
+            yav += points[index].y;
+        }
+
+        Point mergedPoint;
+        mergedPoint.x = xav / groupSize;
+        mergedPoint.y = yav / groupSize;
+        mergedPoint.id = startingId + mergedPoints.size() + 1;
+        mergedPoints.push_back(mergedPoint);
+        mergedPoint = Point();
+    }
+    return mergedPoints;
+}
 
 int main()
 {
@@ -100,6 +181,11 @@ int main()
     
     readFromFile(points, N, M);
     calculateDistances(points, M);
-    
+    std::vector<std::vector<int>> result = collectAllToBeMergedVectors(points);
+    std::vector<Point> mergedPoints = merge(points, result);
+    for(auto p : mergedPoints)
+    {
+        std::cout<<p.id<<" "<<p.x<<" "<<p.y<<"\n";
+    }
     return 0;
 }

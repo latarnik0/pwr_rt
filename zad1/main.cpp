@@ -3,11 +3,13 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <cmath>
 
 struct Point
 {
     float x,y;
     int id;
+    std::vector<int> distancesFromOtherPoints;
 };
 
 void readFromFile(std::vector<Point>& points, int& N, float& M)
@@ -52,5 +54,34 @@ int main()
     readFromFile(points, N, M);
     std::cout<<points.size();
 
+    // there are only 12 records in the example file - brute force can be used
+    // calculate distances from every point to every other point
+    float temp=0.0;
+    for(int i=0; i<points.size(); ++i)
+    {
+        for(int j=0; j<points.size(); ++j)
+        {
+            if(i == j)
+            {
+                // 0 indicates current point
+                points[i].distancesFromOtherPoints.push_back(0);
+                continue;
+            }
+
+            temp = std::sqrt(std::pow(points[i].x - points[j].x, 2.0f)
+                + std::pow(points[i].y - points[j].y, 2.0f));
+
+            if(temp < M)
+            {
+                // 2 indicates that this point is too close to point i
+                points[i].distancesFromOtherPoints.push_back(2);
+            }
+            else
+            {
+                // 1 indicates that this point is out of merging zone
+                points[i].distancesFromOtherPoints.push_back(1);
+            }
+        }
+    }
     return 0;
 }

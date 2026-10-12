@@ -46,14 +46,8 @@ void readFromFile(std::vector<Point>& points, int& N, float& M)
     file.close();
 }
 
-int main()
+void calculateDistances(std::vector<Point>& points, float& M)
 {
-    std::vector<Point> points = {};
-    int N = 0;
-    float M = 0.0f;
-    readFromFile(points, N, M);
-    std::cout<<points.size();
-
     // there are only 12 records in the example file - brute force can be used
     // calculate distances from every point to every other point
     float temp=0.0;
@@ -83,5 +77,29 @@ int main()
             }
         }
     }
+}
+
+// every distancesFromOtherPoints vector of every point creates a square matrix like this (example not real output):
+// [0, 1, 1, 1]
+// [1, 0, 2, 1] - this is supposed to merge with the one below
+// [1, 2, 0, 1]
+// [1, 1, 1, 0]
+
+// We look at the points as graph so the matrix above is adjacency matrix of this graph
+// In traditional adjacency matrix where there is no connection between the nodes we type 0
+// here, when distance from the points is >M we type 1 (non-merging zone)
+// We need to traverse this matrix in order to find which points are connected (distance < M, merging zone)
+// In order to avoid creation of the same multiple points (for example point 1 with point 2 and point 2 with point 1) 
+// we need to remember which points were already visited
+
+int main()
+{
+    std::vector<Point> points = {};
+    int N = 0;
+    float M = 0.0f;
+    
+    readFromFile(points, N, M);
+    calculateDistances(points, M);
+    
     return 0;
 }

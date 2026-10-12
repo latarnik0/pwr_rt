@@ -93,6 +93,8 @@ void calculateDistances(std::vector<Point>& points, float& M)
 // we need to remember which points were already visited
 // In order to achieve this we can use DFS algorithm
 
+// !!! EDGE CASE: i assume that 0 means point is calculating distance from itself but it is possible
+// that there are going to be points with the same (x,y) coordinates but different ID's - TODO
 
 // This function checks for points that are close enough to be merged and saves them to local vector toBeMerged
 // This vector is build for every point so we need to collect all of these distinct toBeMerged vectors (those with .size() > 1)

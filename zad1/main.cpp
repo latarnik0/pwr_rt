@@ -175,6 +175,38 @@ std::vector<Point> merge(const std::vector<Point>& points, const std::vector<std
     return mergedPoints;
 }
 
+// -------- ZADANIE 1.2 --------
+// First we find the extreme points (those with: minX, maxX, minY, maxY coordinates)
+// We need them because in determining the shortest path that wraps all points those extreme points 
+// are going to be always on the outline - they define boundries
+
+
+struct Extremes {
+    Point minX;
+    Point maxX;
+    Point minY;
+    Point maxY;
+};
+
+// This functions is simple search for min/max in a vector
+Extremes findExtremePoints(const std::vector<Point>& points)
+{
+    if(points.empty())
+    {
+        return {}; 
+    }
+
+    Extremes e = {points[0], points[0], points[0], points[0]};
+    for(const auto& p : points)
+    {
+        if(p.x < e.minX.x) e.minX = p;
+        if(p.x > e.maxX.x) e.maxX = p;
+        if(p.y < e.minY.y) e.minY = p;
+        if(p.y > e.maxY.y) e.maxY = p;
+    }
+    return e;
+}
+
 int main()
 {
     std::vector<Point> points = {};

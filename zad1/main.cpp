@@ -94,7 +94,7 @@ void calculateDistances(std::vector<Point>& points, float& M)
 // we need to remember which points were already visited
 // In order to achieve this we can use DFS algorithm
 
-// !!! EDGE CASE: i assume that 0 means point is calculating distance from itself but it is possible
+// EDGE CASE 1: i assume that 0 means point is calculating distance from itself but it is possible
 // that there are going to be points with the same (x,y) coordinates but different ID's - TODO
 
 // This function checks for points that are close enough to be merged and saves them to local vector toBeMerged
@@ -261,38 +261,151 @@ std::vector<Point> filterOutInsidePoints(const std::vector<Point>& points, const
     return filteredPoints;
 }
 
-// Pomocnicza funkcja do obliczania kwadratu odległości między punktami
-float distanceSq(const Point& p1, const Point& p2)
+// This function is a helper that addresses the EDGE CASE 2 mentioned below
+float calcDist(const Point& p1, const Point& p2)
 {
-    return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
+    return std::sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
 }
 
 // This function is a standard Jarvis march algorithm
-std::vector<Point> jarvisMarch(const std::vector<Point>& points)
+std::vector<Point> jarvisMarch(const std::vector<Point>& filteredPoints)
 {
     std::vector<Point> outline;
     
     // The starting point is a point with smallest x coordinate
-    // EDGE CASE: there could be multiple points with the same smallest X coordinate.
+    // EDGE CASE 1: there could be multiple points with the same smallest X coordinate.
     // In that case we look at smallest Y coordinate. It could be that there are points with the same
     // coordinates but different ID's like in part one of this task, but here it does not matter
     // because we operate in a 2D setup. This edge case will be fixed so it wont be a concern
     int startingPoint = 0;
     
     // We start from the first next point 
-    for(int i=1; i<points.size(); ++i)
+    for(int i=1; i<filteredPoints.size(); ++i)
     {
-        if(points[i].x < points[startingPoint].x)
+        if(filteredPoints[i].x < filteredPoints[startingPoint].x)
         {
             startingPoint = i;
         }
-        if(points[i].x == points[startingPoint].x && points[i].y < points[startingPoint].y)
+        if(filteredPoints[i].x == filteredPoints[startingPoint].x && filteredPoints[i].y < filteredPoints[startingPoint].y)
         {
             startingPoint = i;
         }
     }
 
+    int p = startingPoint;
+    int q = 0;
+
+    // Start of the march 
+    do
+    {
+        // Add current point to the outline
+        outline.push_back(filteredPoints[p]);
+
+        // We set 'q' as the next candidate to be included in the outline.
+        // Zmieniono na modulo, aby uniknąć wyjścia poza zakres tablicy dla ostatniego elementu.
+        q = (p + 1) % filteredPoints.size();
+
+        for(int i=0; i<filteredPoints.size(); ++i)
+        {
+            if (i == p) continue;
+
+            // We check the orientation of point 'i' relative to the directed line created by points pq 
+            // to see if it makes a more extreme turn than q
+            float cross = crossProduct(filteredPoints[p], filteredPoints[q], filteredPoints[i]);
+            
+            // If this is true then we found point that is further away to the left
+            // It becomes the next candidate
+            if(cross < 0)
+            {
+                q = i;
+            }
+            // EDGE CASE 2: it could be that points are in the straight line
+            // In that case we choose the further one (further from point p) 
+            else if(cross == 0.0f)
+            {
+                if(calcDist(filteredPoints[p], filteredPoints[i]) > calcDist(filteredPoints[p], filteredPoints[q]))
+                {
+                    q = i;
+                }
+            }
+        }
+
+        p = q;
+    
+    // The loop ends when we reach the beginning
+    } while (p != startingPoint);
+
     return outline;
+}
+
+// This function is a wrapper for task 1.2
+std::vector<Point> getShortestOutline(const std::vector<Point>& points)
+{
+    // First step: find the extremes
+    Extremes e = findExtremePoints(points);
+
+    // Second step: filter out the inside points
+    std::vector<Point> filteredPoints = filterOutInsidePoints(points, e);
+
+    // Third step: determine the outline from filtered points
+    std::vector<Point> outline = jarvisMarch(filteredPoints);
+
+    return outline;
+}
+
+// This function calculates the length of the outline
+float calculateOutlineLength(std::vector<Point>& outline)
+{
+    float totalLength = 0.0f;
+    for (int i=0; i<outline.size(); ++i)
+    {
+        const Point& p1 = outline[i];
+        const Point& p2 = outline[(i + 1) % outline.size()]; 
+
+        totalLength += calcDist(p1, p2);
+    }
+    return totalLength;
+}
+
+// These 2 functions below replace points that are going to be merged with the merged ones
+// as for the task 1.2 the input should be vector with new points
+// This is not optimal solution in terms of runtime and memory allocation 
+// but for 12 records it is acceptable
+bool isGoingToBeMerged(int pointId, const std::vector<std::vector<int>>& result)
+{
+    for(int i=0; i<result.size(); ++i)
+    {
+        for(int j=0; j<result[i].size(); ++j)
+        {
+            if(result[i][j] == pointId)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void updateOriginalPoints(std::vector<Point>& points, const std::vector<std::vector<int>>& result, const std::vector<Point>& mergedPoints)
+{
+    std::vector<Point> newPoints;
+    newPoints.reserve(points.size());
+
+    // In new vector include only those points which are not going to be merged
+    for(int i=0; i<points.size(); ++i)
+    {
+        if(!isGoingToBeMerged(points[i].id, result))
+        {
+            newPoints.push_back(points[i]);
+        }
+    }
+
+    // Add new points created from merging
+    for(int i=0; i<mergedPoints.size(); ++i)
+    {
+        newPoints.push_back(mergedPoints[i]);
+    }
+    points = newPoints;
 }
 
 int main()
@@ -301,13 +414,16 @@ int main()
     int N = 0;
     float M = 0.0f;
     
+    // ZAD 1.1
     readFromFile(points, N, M);
     calculateDistances(points, M);
     std::vector<std::vector<int>> result = collectAllToBeMergedVectors(points);
     std::vector<Point> mergedPoints = merge(points, result);
-    for(auto p : mergedPoints)
-    {
-        std::cout<<p.id<<" "<<p.x<<" "<<p.y<<"\n";
-    }
+    updateOriginalPoints(points, result, mergedPoints);
+
+    // ZAD 1.2
+    std::vector<Point> outline = getShortestOutline(points);
+    float lengthOfOutline = calculateOutlineLength(outline);
+
     return 0;
 }

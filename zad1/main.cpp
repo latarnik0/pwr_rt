@@ -179,16 +179,20 @@ std::vector<Point> merge(const std::vector<Point>& points, const std::vector<std
 // First we find the extreme points (those with: minX, maxX, minY, maxY coordinates)
 // We need them because in determining the shortest path that wraps all points those extreme points 
 // are going to be always on the outline - they define boundries
+// Next we can connect them and discard all points that are inside this figure - they will always be inside
+// so we shouldnt take them into considiration
+// Finally we can use Jarvis march algorithm to find remaining points that do not fit into this area, so
+// they need to make the outline giving us the shortest possible path to wrap all of the points
 
-
-struct Extremes {
+struct Extremes
+{
     Point minX;
     Point maxX;
     Point minY;
     Point maxY;
 };
 
-// This functions is simple search for min/max in a vector
+// This function is simple search for min/max in a vector
 Extremes findExtremePoints(const std::vector<Point>& points)
 {
     if(points.empty())
@@ -205,6 +209,52 @@ Extremes findExtremePoints(const std::vector<Point>& points)
         if(p.y > e.maxY.y) e.maxY = p;
     }
     return e;
+}
+
+// This function is a helper to determine if a point P is to the left or to the right from AB line
+// It is essential in order to filter out points that will be inside the outline (they will be to the right of a vertex)
+// and to include all other points to build an actual shortest path (they will be to the left of a vertex)
+float crossProduct(const Point& A, const Point& B, const Point& P)
+{
+    return (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
+}
+
+// This function checks if a point P is inside 2D figure created from extremes
+bool isInside(const Point& A, const Point& B, const Point& C, const Point& D, const Point& P)
+{
+    // If the point P is inside it will be to the right of every vertex of this quadrilateral
+    return crossProduct(A, B, P) >= 0 &&
+           crossProduct(B, C, P) >= 0 &&
+           crossProduct(C, D, P) >= 0 &&
+           crossProduct(D, A, P) >= 0;
+}
+
+// This function is an actual filter of the points that won't be taken into considiration in Jarvis march algorithm 
+std::vector<Point> filterOutInsidePoints(const std::vector<Point>& points, const Extremes& e)
+{
+    std::vector<Point> filteredPoints;
+    filteredPoints.reserve(points.size());
+    Point A = e.minX;
+    Point B = e.minY;
+    Point C = e.maxX;
+    Point D = e.maxY;
+
+    for(const auto& p : points)
+    {
+        // Extremes are making the outline so we include them
+        if(p.id == A.id || p.id == B.id || p.id == C.id || p.id == D.id)
+        {
+            filteredPoints.push_back(p);
+            continue;
+        }
+
+        // If a point is NOT inside, we include it
+        if(!isInside(A, B, C, D, p))
+        {
+            filteredPoints.push_back(p);
+        }
+    }
+    return filteredPoints;
 }
 
 int main()

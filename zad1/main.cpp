@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 
+// ##################   ZADANIE 1.1   ##################
 struct Point
 {
     float x,y;
@@ -85,9 +86,9 @@ void calculateDistances(std::vector<Point>& points, float& M)
 // [1, 2, 0, 1]
 // [1, 1, 1, 0]
 
-// We look at the points as graph so the matrix above is adjacency matrix of this graph
+// We can look at the points as graph so, the matrix above is adjacency matrix of this graph
 // In traditional adjacency matrix where there is no connection between the nodes we type 0
-// here, when distance from the points is >M we type 1 (non-merging zone)
+// Here, when distance from the points is >M we type 1 (non-merging zone)
 // We need to traverse this matrix in order to find which points are connected (distance < M, merging zone)
 // In order to avoid creation of the same multiple points (for example point 1 with point 2 and point 2 with point 1) 
 // we need to remember which points were already visited
@@ -139,6 +140,7 @@ std::vector<std::vector<int>> collectAllToBeMergedVectors(std::vector<Point>& po
         dfs(i, points, visited, toBeMerged);
 
         // Check if a point has other points in <M proximity
+        // If not, it is a single point, we do not include it
         if(toBeMerged.size() > 1)
         {
             result.push_back(toBeMerged);
@@ -147,6 +149,7 @@ std::vector<std::vector<int>> collectAllToBeMergedVectors(std::vector<Point>& po
     return result;
 }
 
+// This function does the actual merging of points (calculating average (x,y) coordinates and giving them new ID's) 
 std::vector<Point> merge(const std::vector<Point>& points, const std::vector<std::vector<int>>& result)
 {
     std::vector<Point> mergedPoints;
@@ -175,7 +178,8 @@ std::vector<Point> merge(const std::vector<Point>& points, const std::vector<std
     return mergedPoints;
 }
 
-// -------- ZADANIE 1.2 --------
+// ##################   ZADANIE 1.2   ##################
+
 // First we find the extreme points (those with: minX, maxX, minY, maxY coordinates)
 // We need them because in determining the shortest path that wraps all points those extreme points 
 // are going to be always on the outline - they define boundries
@@ -255,6 +259,40 @@ std::vector<Point> filterOutInsidePoints(const std::vector<Point>& points, const
         }
     }
     return filteredPoints;
+}
+
+// Pomocnicza funkcja do obliczania kwadratu odległości między punktami
+float distanceSq(const Point& p1, const Point& p2)
+{
+    return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
+}
+
+// This function is a standard Jarvis march algorithm
+std::vector<Point> jarvisMarch(const std::vector<Point>& points)
+{
+    std::vector<Point> outline;
+    
+    // The starting point is a point with smallest x coordinate
+    // EDGE CASE: there could be multiple points with the same smallest X coordinate.
+    // In that case we look at smallest Y coordinate. It could be that there are points with the same
+    // coordinates but different ID's like in part one of this task, but here it does not matter
+    // because we operate in a 2D setup. This edge case will be fixed so it wont be a concern
+    int startingPoint = 0;
+    
+    // We start from the first next point 
+    for(int i=1; i<points.size(); ++i)
+    {
+        if(points[i].x < points[startingPoint].x)
+        {
+            startingPoint = i;
+        }
+        if(points[i].x == points[startingPoint].x && points[i].y < points[startingPoint].y)
+        {
+            startingPoint = i;
+        }
+    }
+
+    return outline;
 }
 
 int main()

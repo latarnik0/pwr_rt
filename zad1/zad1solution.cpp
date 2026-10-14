@@ -6,6 +6,10 @@
 #include <cmath>
 
 // ##################   ZADANIE 1.1   ##################
+
+// Aby wyznaczyć punkty kwalifikujące się do połączenia obliczę odległość każdego punktu do każdego innego punktu
+// Decyduje się na rozwiązanie brute force z powodu małej liczby rekordów w pliku
+
 struct Point
 {
     float x,y;
@@ -13,6 +17,7 @@ struct Point
     std::vector<int> distancesFromOtherPoints;
 };
 
+// Funkcja czytania danych z pliku
 void readFromFile(std::vector<Point>& points, int& N, float& M)
 {
     std::ifstream file("/home/latarnik3/pwr_rt/zad1/example_input.txt");
@@ -47,10 +52,9 @@ void readFromFile(std::vector<Point>& points, int& N, float& M)
     file.close();
 }
 
+// Funkcja obliczania odległości każdego punktu do każdego innego punktu
 void calculateDistances(std::vector<Point>& points, float& M)
 {
-    // there are only 12 records in the example file - brute force can be used
-    // calculate distances from every point to every other point
     float temp=0.0;
     for(int i=0; i<points.size(); ++i)
     {
@@ -58,7 +62,7 @@ void calculateDistances(std::vector<Point>& points, float& M)
         {
             if(i == j)
             {
-                // 0 indicates current point
+                // 0 będzie oznaczać samego siebie (jako punkt)
                 points[i].distancesFromOtherPoints.push_back(0);
                 continue;
             }
@@ -68,45 +72,45 @@ void calculateDistances(std::vector<Point>& points, float& M)
 
             if(temp < M)
             {
-                // 2 indicates that this point is too close to point i
+                // 2 będzie oznaczać że punkt 'i' znajduje się w "strefie łączenia"
                 points[i].distancesFromOtherPoints.push_back(2);
             }
             else
             {
-                // 1 indicates that this point is out of merging zone
+                // 1 będzie oznaczać że punkt jest dostatecznie daleko i nie będziemy go łączyć
                 points[i].distancesFromOtherPoints.push_back(1);
             }
         }
     }
 }
 
-// every distancesFromOtherPoints vector of every point creates a square matrix like this (example not real output):
+// każdy wektor distancesFromOtherPoints każdego punktu tworzy taką macierz kwadratową (przykład):
 // [0, 1, 1, 1]
-// [1, 0, 2, 1] - this is supposed to merge with the one below
+// [1, 0, 2, 1] - widzimy że tutaj i w wektorze poniżej są punkty do scalenia
 // [1, 2, 0, 1]
 // [1, 1, 1, 0]
 
-// We can look at the points as graph so, the matrix above is adjacency matrix of this graph
-// In traditional adjacency matrix where there is no connection between the nodes we type 0
-// Here, when distance from the points is >M we type 1 (non-merging zone)
-// We need to traverse this matrix in order to find which points are connected (distance < M, merging zone)
-// In order to avoid creation of the same multiple points (for example point 1 with point 2 and point 2 with point 1) 
-// we need to remember which points were already visited
-// In order to achieve this we can use DFS algorithm
+// Punkty można traktować jako graf, zatem powyższa macierz jest macierzą sąsiedztwa tego grafu
+// W tradycyjnej, matematycznej macierzy sąsiedztwa w miejscach gdzie nie ma połączenia między wezłami wpisujemy 0
+// Tutaj gdy odległość między punktami jest większa od M wpisujemy 1 (dostatecznie daleko - nie scalamy)
+// Musimy przeszukać tą macierz aby ustalić które punkty są zbyt blisko (odległość < M, scalamy)
+// Aby uniknąć wielokrotnego tworzenia tych samych nowych punktów (na przykład punktu 1 z punktem 2 daje punkt 3 
+// oraz punktu 2 z punktem 1 co też da punkt 3), musimy pamiętać które punkty zostały już odwiedzone
+// Użyje do tego algorytmu DFS
 
-// EDGE CASE 1: i assume that 0 means point is calculating distance from itself but it is possible
-// that there are going to be points with the same (x,y) coordinates but different ID's - TODO
-
-// This function checks for points that are close enough to be merged and saves them to local vector toBeMerged
-// This vector is build for every point so we need to collect all of these distinct toBeMerged vectors (those with .size() > 1)
+// Ta funkcja to standardowy algorytm DFS. Odwiedza każdy punkt i sprawdza czy dany punkt leży w strefie scalania
+// Następnie zapisuje grupy punktów które powinny być połączone ze sobą do wektora toBeMerged
+// Funkcja ta na początku dodaje aktualny punkt do wektora więc jeśli punkt nie ma bliskich sąsiadów
+// ten wektor będzie miał tylko ten jeden punkt. Należy to wziąć pod uwagę później
+// Wektor toBeMerged jest budowany dla każdego punktu zatem trzeba będzie pozbierać te wektory (patrz funkcję niżej)
 void dfs(int startingPoint, std::vector<Point>& points, std::vector<bool>& visited, std::vector<int>& toBeMerged)
 {
-    // set current point as visited
+    // aktualny punkt jako odwiedzony
     visited[startingPoint] = true;
-    // add current point to the current merging group
-    toBeMerged.push_back(startingPoint + 1);
+    // dodaj aktualny punkt do obecnej grupy do scalenia
+    toBeMerged.push_back(startingPoint);
 
-    // for every point of the graph
+    // dla każdego punktu w grafie
     for(int i=0; i<points.size(); ++i)
     {
         if(visited[i] || startingPoint == i)
@@ -114,18 +118,20 @@ void dfs(int startingPoint, std::vector<Point>& points, std::vector<bool>& visit
             continue;
         }
         
-        // if distance for startingPoint to the i-th point is 2  
+        // jeśli i-ty punkt leży w strefie scalania (wartość 2)
         if(points[startingPoint].distancesFromOtherPoints[i] == 2)
         {
-            // recursively visit the i-th point and all its valid neighbors
+            // rekurencyjnie odwiedź i-ty punkt i wszystkich jego sąsiadów
+            // musimy sprawdzać wszystkich sąsiadów aby nie dochodziło do duplikacji
             dfs(i, points, visited, toBeMerged);
         }
     }
 }
 
-// This function collects these distinct toBeMerged vectors mentioned above
+// Ta funkcja zbiera wszystkie grupy punktów do scalenia (wektory toBeMerged)
 std::vector<std::vector<int>> collectAllToBeMergedVectors(std::vector<Point>& points)
 {
+    // na początku żaden punkt nie jest odwiedzony
     std::vector<bool> visited(points.size(), false);
     std::vector<std::vector<int>> result;
 
@@ -139,8 +145,8 @@ std::vector<std::vector<int>> collectAllToBeMergedVectors(std::vector<Point>& po
         std::vector<int> toBeMerged;
         dfs(i, points, visited, toBeMerged);
 
-        // Check if a point has other points in <M proximity
-        // If not, it is a single point, we do not include it
+        // sprawdź czy wektor ma więcej niż 1 element
+        // jeśli nie, pomijamy go ponieważ to pojedynczy punkt bez bliskich sąsiadów
         if(toBeMerged.size() > 1)
         {
             result.push_back(toBeMerged);
@@ -149,12 +155,14 @@ std::vector<std::vector<int>> collectAllToBeMergedVectors(std::vector<Point>& po
     return result;
 }
 
-// This function does the actual merging of points (calculating average (x,y) coordinates and giving them new ID's) 
+// Ta funkcja scala grupy punktów które są zwracane z funkcji powyżej, liczy średnie (x,y) oraz nadaje punktom nowe ID
 std::vector<Point> merge(const std::vector<Point>& points, const std::vector<std::vector<int>>& result)
 {
     std::vector<Point> mergedPoints;
     const int startingId = points.size();
 
+    // dla każdej grupy do scalenia przechodzimy przez każdy punkt
+    // 
     for(const std::vector<int>& group : result)
     {
         float xav = 0.0f;
@@ -163,11 +171,11 @@ std::vector<Point> merge(const std::vector<Point>& points, const std::vector<std
 
         for(int memberId : group)
         {
-            const int index = memberId - 1;
-            xav += points[index].x;
-            yav += points[index].y;
+            xav += points[memberId].x;
+            yav += points[memberId].y;
         }
 
+        // tworzymy nowy punkt, dodajemy go do wektora nowych punktow, czyścimy strukturę mergedPoint przed kolejną iteracją
         Point mergedPoint;
         mergedPoint.x = xav / groupSize;
         mergedPoint.y = yav / groupSize;
@@ -180,13 +188,15 @@ std::vector<Point> merge(const std::vector<Point>& points, const std::vector<std
 
 // ##################   ZADANIE 1.2   ##################
 
-// First we find the extreme points (those with: minX, maxX, minY, maxY coordinates)
-// We need them because in determining the shortest path that wraps all points those extreme points 
-// are going to be always on the outline - they define boundries
-// Next we can connect them and discard all points that are inside this figure - they will always be inside
-// so we shouldnt take them into considiration
-// Finally we can use Jarvis march algorithm to find remaining points that do not fit into this area, so
-// they need to make the outline giving us the shortest possible path to wrap all of the points
+// Do tego zadania moje rozumowanie jest nastepujące:
+// Najpierw znajdujemy punkty skrajne w każdym kierunku (minX, maxX, minY, maxY)
+// Są one potrzebne, ponieważ przy wyznaczaniu najkrótszej ścieżki obejmującej wszystkie punkty
+// te zawsze muszą się znaleźć na tej ścieżce - wyznaczają one granice
+// Następnie możemy je połączyć ze sobą i odrzucić wszystkie punkty znajdujące się wewnątrz tak powstałego czworokąta –
+// skoro zawsze będą one w środku, nie musimy brać ich pod uwagę
+// Na koniec możemy użyć algorytmu Jarvisa, aby znaleźć pozostałe punkty, które nie mieszczą się w w tej figurze,
+// a zatem muszą tworzyć ścieżkę
+// To podejście zapewni znalezienie najkrótszej możliwej ścieżki obejmującej wszystkie punkty
 
 struct Extremes
 {
@@ -196,7 +206,7 @@ struct Extremes
     Point maxY;
 };
 
-// This function is simple search for min/max in a vector
+// Ta funkcja szuka punktow ekstremalnych
 Extremes findExtremePoints(const std::vector<Point>& points)
 {
     if(points.empty())
@@ -215,25 +225,28 @@ Extremes findExtremePoints(const std::vector<Point>& points)
     return e;
 }
 
-// This function is a helper to determine if a point P is to the left or to the right from AB line
-// It is essential in order to filter out points that will be inside the outline (they will be to the right of a vertex)
-// and to include all other points to build an actual shortest path (they will be to the left of a vertex)
+// Ta funkcja to helper aby sprawdzić czy punkt P znajduje sie po lewej czy po prawej stronie odcinka stworzonego
+// z dwóch innych punktów AB
+// Ta funkcja jest potrzebna przy odrzucaniu punktów które znajdą się w środku (po połączeniu skrajnych punktów)
+// wtedy każdy wierzchołek tak powstałej figury będzie miał te punkty po swojej prawej stronie 
+// (albo lewej, ja zakładam konwencję że figura jest tworzona zgodnie z ruchem wskazówek zegara)
+// oraz do wyznaczania najkrótkszej ścieżki (wtedy szukamy punktów najbardziej na lewo)
 float crossProduct(const Point& A, const Point& B, const Point& P)
 {
     return (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
 }
 
-// This function checks if a point P is inside 2D figure created from extremes
+// Ta funkcja sprawdza czy punkt znajduje się wewnątrz figury powstałej z połączenia punktow skrajnych
 bool isInside(const Point& A, const Point& B, const Point& C, const Point& D, const Point& P)
 {
-    // If the point P is inside it will be to the right of every vertex of this quadrilateral
+    // Tutaj logika opisana przy funkcji wyżej - iloczyn wektorowy>=0 -> punkt znajduje się po prawej czyli w środku
     return crossProduct(A, B, P) >= 0 &&
            crossProduct(B, C, P) >= 0 &&
            crossProduct(C, D, P) >= 0 &&
            crossProduct(D, A, P) >= 0;
 }
 
-// This function is an actual filter of the points that won't be taken into considiration in Jarvis march algorithm 
+// Ta funkcja filtruje punkty i odrzuca te które znajdują się w środku. Wynik tej funkcji będzie wejściem algorytmu Jarvisa 
 std::vector<Point> filterOutInsidePoints(const std::vector<Point>& points, const Extremes& e)
 {
     std::vector<Point> filteredPoints;
@@ -245,14 +258,14 @@ std::vector<Point> filterOutInsidePoints(const std::vector<Point>& points, const
 
     for(const auto& p : points)
     {
-        // Extremes are making the outline so we include them
+        // Punkty skrajne należa do obwódki
         if(p.id == A.id || p.id == B.id || p.id == C.id || p.id == D.id)
         {
             filteredPoints.push_back(p);
             continue;
         }
 
-        // If a point is NOT inside, we include it
+        // Jeśli punkt nie jest w środku przechodzi filtr
         if(!isInside(A, B, C, D, p))
         {
             filteredPoints.push_back(p);
@@ -261,31 +274,29 @@ std::vector<Point> filterOutInsidePoints(const std::vector<Point>& points, const
     return filteredPoints;
 }
 
-// This function is a helper that addresses the EDGE CASE 2 mentioned below
+// Ta funkcja to helper rozwiązujący EDGE CASE podany poniżej
 float calcDist(const Point& p1, const Point& p2)
 {
     return std::sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
 }
 
-// This function is a standard Jarvis march algorithm
+// Ta funkcja to algorytm Jarvisa
 std::vector<Point> jarvisMarch(const std::vector<Point>& filteredPoints)
 {
     std::vector<Point> outline;
-    
-    // The starting point is a point with smallest x coordinate
-    // EDGE CASE 1: there could be multiple points with the same smallest X coordinate.
-    // In that case we look at smallest Y coordinate. It could be that there are points with the same
-    // coordinates but different ID's like in part one of this task, but here it does not matter
-    // because we operate in a 2D setup. This edge case will be fixed so it wont be a concern
     int startingPoint = 0;
     
-    // We start from the first next point 
+    // szukamy punktu najbardziej na lewo
+    // bierzemy pierwszy punkt (o indeksie = 0) i zaczynamy porównywać kolejne 
     for(int i=1; i<filteredPoints.size(); ++i)
     {
         if(filteredPoints[i].x < filteredPoints[startingPoint].x)
         {
             startingPoint = i;
         }
+        // może zdarzyć się tak że mamy 2 punkty o takiej samej współrzędnej x, wtedy bierzemy ten z mniejszym y
+        // nie muszę się tu martwić o przypadek gdzie punkty będą takie same ponieważ wejściem do tego zadania
+        // jest wektor punktów scalonych a jeśli odległość 2 punktów byłaby 0.0 to zostalyby one scalone
         if(filteredPoints[i].x == filteredPoints[startingPoint].x && filteredPoints[i].y < filteredPoints[startingPoint].y)
         {
             startingPoint = i;
@@ -295,32 +306,30 @@ std::vector<Point> jarvisMarch(const std::vector<Point>& filteredPoints)
     int p = startingPoint;
     int q = 0;
 
-    // Start of the march 
+    // Start wlaściwego algorytmu 
     do
     {
-        // Add current point to the outline
+        // dodaj punkt do otoczki
         outline.push_back(filteredPoints[p]);
 
-        // We set 'q' as the next candidate to be included in the outline.
-        // Zmieniono na modulo, aby uniknąć wyjścia poza zakres tablicy dla ostatniego elementu.
+        // 'q' to następny kandydat do włączenia do otoczki
+        // 'q' musi byc różne od 'p'. Dodałem modulo aby nie wystąpiło wyjście poza zakres
         q = (p + 1) % filteredPoints.size();
 
         for(int i=0; i<filteredPoints.size(); ++i)
         {
             if (i == p) continue;
 
-            // We check the orientation of point 'i' relative to the directed line created by points pq 
-            // to see if it makes a more extreme turn than q
+            // sprawdzamy czy punkt 'i' jest po prawo czy po lewo od prostej stworzonej przez 'p' i 'q'
             float cross = crossProduct(filteredPoints[p], filteredPoints[q], filteredPoints[i]);
             
-            // If this is true then we found point that is further away to the left
-            // It becomes the next candidate
+            // jeśli tak to znaczy że punkt 'i' jest bardziej na lewo zatem staje się on obecnym kandydatem
             if(cross < 0)
             {
                 q = i;
             }
-            // EDGE CASE 2: it could be that points are in the straight line
-            // In that case we choose the further one (further from point p) 
+            // EDGE CASE: może się zdarzyć tak że dwa punkty będą w prostej linii (iloczyn wektorowy = 0.0)
+            // wtedy wybieramy punkt który jest dalej
             else if(cross == 0.0f)
             {
                 if(calcDist(filteredPoints[p], filteredPoints[i]) > calcDist(filteredPoints[p], filteredPoints[q]))
@@ -332,45 +341,43 @@ std::vector<Point> jarvisMarch(const std::vector<Point>& filteredPoints)
 
         p = q;
     
-    // The loop ends when we reach the beginning
+    // Algorytm kończy się gdy wróciliśmy do punktu wyjścia
     } while (p != startingPoint);
 
     return outline;
 }
 
-// This function is a wrapper for task 1.2
+// Ta funkcja to wrapper do zadania 1.2
 std::vector<Point> getShortestOutline(const std::vector<Point>& points)
 {
-    // First step: find the extremes
+    // znajdz punkty skrajne
     Extremes e = findExtremePoints(points);
 
-    // Second step: filter out the inside points
+    // pozbądź się punktów które napewno nie będą tworzyć otoczki
     std::vector<Point> filteredPoints = filterOutInsidePoints(points, e);
 
-    // Third step: determine the outline from filtered points
+    // stwórz ścieżkę z pozostalych punktów
     std::vector<Point> outline = jarvisMarch(filteredPoints);
 
     return outline;
 }
 
-// This function calculates the length of the outline
+// Ta funkcja liczy faktyczną długość ścieżki
 float calculateOutlineLength(std::vector<Point>& outline)
 {
     float totalLength = 0.0f;
     for (int i=0; i<outline.size(); ++i)
     {
         const Point& p1 = outline[i];
-        const Point& p2 = outline[(i + 1) % outline.size()]; 
+        const Point& p2 = outline[(i + 1) % outline.size()]; // modulo aby nie wychodzic poza zakres
 
         totalLength += calcDist(p1, p2);
     }
     return totalLength;
 }
 
-// These 2 functions below replace points that are going to be merged with the merged ones
-// as for the task 1.2 the input should be vector with new points
-// This is not optimal solution in terms of runtime and memory allocation 
-// but for 12 records it is acceptable
+// Te dwie funkcje poniżej usuwają punkty które zostaly scalone i dodają nowo utworzone punkty
+// Ten proces nie jest zoptymalizowany ale dla 12 rekordów zostawiam to w takiej formie
 bool isGoingToBeMerged(int pointId, const std::vector<std::vector<int>>& result)
 {
     for(int i=0; i<result.size(); ++i)
@@ -391,7 +398,6 @@ void updateOriginalPoints(std::vector<Point>& points, const std::vector<std::vec
     std::vector<Point> newPoints;
     newPoints.reserve(points.size());
 
-    // In new vector include only those points which are not going to be merged
     for(int i=0; i<points.size(); ++i)
     {
         if(!isGoingToBeMerged(points[i].id, result))
@@ -400,7 +406,6 @@ void updateOriginalPoints(std::vector<Point>& points, const std::vector<std::vec
         }
     }
 
-    // Add new points created from merging
     for(int i=0; i<mergedPoints.size(); ++i)
     {
         newPoints.push_back(mergedPoints[i]);

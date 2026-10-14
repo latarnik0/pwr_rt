@@ -5,12 +5,17 @@
 #include <string>
 #include <sstream>
 
+// To zadanie wymaga identyfikacji i korekcji błędu sensor1 tak aby jego pomiary w ogóle były użyteczne
+// W pomiarach sensor2 nie występuje żadne przesunięcie, pomiary dobrze oddają kształt toru. Problemem jest ich częstotliwość
+// Dla pomiarow sensor2 należy wykonać interpolację
+
 struct Position
 {
     double x;
     double y;
 };
 
+// Wczytuje dane z plików do mapy gdzie kluczem jest czas
 std::map<double, Position> readSensorReadings(std::ifstream& sensor)
 {
     std::string line;

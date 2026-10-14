@@ -11,6 +11,8 @@
 // żadnych operacji matematycznych, jedynie wyszukiwanie rekordów
 
 // Użyję dwóch niezależnych map po jednej dla każdego czujnika aby móc stwierdzic z którego czujnika pochodzi dany odczyt
+// To rozwiązuje również problem gdyby zdarzyło się tak że oba czujniki wykonały pomiar w tym samym czasie
+// W taki sposób możemy rozróżniać czujniki
 
 // Funkcja czytająca plik .csv i wrzucająca kazdy odczyt do mapy
 std::unordered_map<std::string, std::vector<std::string>> readSensorReadings(std::ifstream& sensor)

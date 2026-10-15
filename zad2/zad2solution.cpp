@@ -1,51 +1,46 @@
 #include <iostream>
-#include <vector>
 #include <fstream>
-#include <map>
+#include <vector>
 #include <string>
 #include <sstream>
 
-// To zadanie wymaga identyfikacji i korekcji błędu sensor1 tak aby jego pomiary w ogóle były użyteczne
-// W pomiarach sensor2 nie występuje żadne przesunięcie, pomiary dobrze oddają kształt toru. Problemem jest ich częstotliwość
-// Dla pomiarow sensor2 należy wykonać interpolację
-
-struct Position
+struct sensorData 
 {
-    double x;
-    double y;
+    std::vector<double> t, x, y;
 };
 
-// Wczytuje dane z plików do mapy gdzie kluczem jest czas
-std::map<double, Position> readSensorReadings(std::ifstream& sensor)
+// Funkcja wczytująca dane z pliku
+sensorData readSensorReadings(const std::string& sensor)
 {
-    std::string line;
-    std::map<double, Position> sensorReadings;
-    
-    if(!sensor.is_open()) return sensorReadings; 
-    
-    while(std::getline(sensor, line))
+    sensorData data;
+    std::ifstream file(sensor);
+    if(!file.is_open())
     {
-        std::string timestampS, xS, yS;
-        std::stringstream ss(line);
-
-        if(std::getline(ss, timestampS, ',') && 
-           std::getline(ss, xS, ',') && 
-           std::getline(ss, yS, ',')) 
-        {
-            sensorReadings[std::stod(timestampS)] = {std::stod(xS), std::stod(yS)};
-        }
+        std::cerr << "Błąd otwarcia pliku\n";
+        return data;
     }
-    return sensorReadings;
+    
+    std::string line, val;
+    std::getline(file, line); // Pominięcie nagłówka danych
+    
+    while(std::getline(file, line))
+    {
+        std::stringstream ss(line);
+        double t, x, y;
+        if (std::getline(ss, val, ',')) t = std::stod(val);
+        if (std::getline(ss, val, ',')) x = std::stod(val);
+        if (std::getline(ss, val, ',')) y = std::stod(val);
+        data.t.push_back(t);
+        data.x.push_back(x);
+        data.y.push_back(y);
+    }
+    return data;
 }
 
-int main ()
-{
-    std::ifstream sensor1("/home/latarnik3/pwr_rt/zad2/sensor1.csv");
-    std::ifstream sensor2("/home/latarnik3/pwr_rt/zad2/sensor2.csv");
+int main() {
+    sensorData sensor1 = readSensorReadings("/home/latarnik3/pwr_rt/zad2/sensor1.csv");
+    sensorData sensor2 = readSensorReadings("/home/latarnik3/pwr_rt/zad2/sensor2.csv");
 
-    std::string T;
-    std::cout<<"Podaj T: ";
-    std::cin>>T;
-
+    std::vector<double> errorX, errorY, timestampSensor2;
     return 0;
 }

@@ -6,7 +6,7 @@
 #include <cmath>
 
 // ścieżka do pliku
-std::string PATH_TO_TASK1 = "example_input.txt";
+const std::string PATH_TO_TASK1 = "example_input.txt";
 // ##################   ZADANIE 1.1   ##################
 
 // Aby wyznaczyć punkty kwalifikujące się do połączenia obliczę odległość każdego punktu do każdego innego punktu

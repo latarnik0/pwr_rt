@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 
+std::string PATH_TO_TASK1 = "/home/latarnik3/pwr_rt/zad1/example_input.txt";
 // ##################   ZADANIE 1.1   ##################
 
 // Aby wyznaczyć punkty kwalifikujące się do połączenia obliczę odległość każdego punktu do każdego innego punktu
@@ -20,7 +21,7 @@ struct Point
 // Funkcja czytania danych z pliku
 void readFromFile(std::vector<Point>& points, int& N, float& M)
 {
-    std::ifstream file("/home/latarnik3/pwr_rt/zad1/example_input.txt");
+    std::ifstream file(PATH_TO_TASK1);
     std::string line;
     
     if(!file.is_open())

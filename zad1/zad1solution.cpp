@@ -5,7 +5,8 @@
 #include <vector>
 #include <cmath>
 
-std::string PATH_TO_TASK1 = "/home/latarnik3/pwr_rt/zad1/example_input.txt";
+// ścieżka do pliku
+std::string PATH_TO_TASK1 = "example_input.txt";
 // ##################   ZADANIE 1.1   ##################
 
 // Aby wyznaczyć punkty kwalifikujące się do połączenia obliczę odległość każdego punktu do każdego innego punktu

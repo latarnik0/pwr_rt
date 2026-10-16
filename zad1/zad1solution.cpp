@@ -67,6 +67,7 @@ void calculateDistances(std::vector<Point>& points, float& M)
                 continue;
             }
 
+            // standardowy wzór na odległość dwóch punktów 2D
             temp = std::sqrt(std::pow(points[i].x - points[j].x, 2.0f)
                 + std::pow(points[i].y - points[j].y, 2.0f));
 
@@ -86,13 +87,15 @@ void calculateDistances(std::vector<Point>& points, float& M)
 
 // każdy wektor distancesFromOtherPoints każdego punktu tworzy taką macierz kwadratową (przykład):
 // [0, 1, 1, 1]
-// [1, 0, 2, 1] - widzimy że tutaj i w wektorze poniżej są punkty do scalenia
+// [1, 0, 2, 1]
 // [1, 2, 0, 1]
 // [1, 1, 1, 0]
+// widzimy z powyższej macierzy że istnieją 2 punkty do scalenia
 
 // Punkty można traktować jako graf, zatem powyższa macierz jest macierzą sąsiedztwa tego grafu
 // W tradycyjnej, matematycznej macierzy sąsiedztwa w miejscach gdzie nie ma połączenia między wezłami wpisujemy 0
 // Tutaj gdy odległość między punktami jest większa od M wpisujemy 1 (dostatecznie daleko - nie scalamy)
+// Gdy odległość jest <M wpisujemy 2 (trzeba scalić)
 // Musimy przeszukać tą macierz aby ustalić które punkty są zbyt blisko (odległość < M, scalamy)
 // Aby uniknąć wielokrotnego tworzenia tych samych nowych punktów (na przykład punktu 1 z punktem 2 daje punkt 3 
 // oraz punktu 2 z punktem 1 co też da punkt 3), musimy pamiętać które punkty zostały już odwiedzone
@@ -115,10 +118,11 @@ void dfs(int startingPoint, std::vector<Point>& points, std::vector<bool>& visit
     {
         if(visited[i] || startingPoint == i)
         {
+            // jeśli już tu byliśmy przejdz do nastepnego punktu
             continue;
         }
         
-        // jeśli i-ty punkt leży w strefie scalania (wartość 2)
+        // jeśli i-ty punkt nie byl odwiedzany i leży w strefie scalania (wartość 2)
         if(points[startingPoint].distancesFromOtherPoints[i] == 2)
         {
             // rekurencyjnie odwiedź i-ty punkt i wszystkich jego sąsiadów
@@ -135,6 +139,7 @@ std::vector<std::vector<int>> collectAllToBeMergedVectors(std::vector<Point>& po
     std::vector<bool> visited(points.size(), false);
     std::vector<std::vector<int>> result;
 
+    // wywołujemy dfs dla każdego punktu w grafie
     for(int i=0; i<points.size(); ++i)
     {
         if(visited[i])
@@ -162,7 +167,6 @@ std::vector<Point> merge(const std::vector<Point>& points, const std::vector<std
     const int startingId = points.size();
 
     // dla każdej grupy do scalenia przechodzimy przez każdy punkt
-    // 
     for(const std::vector<int>& group : result)
     {
         float xav = 0.0f;
@@ -228,7 +232,7 @@ Extremes findExtremePoints(const std::vector<Point>& points)
 // Ta funkcja to helper aby sprawdzić czy punkt P znajduje sie po lewej czy po prawej stronie odcinka stworzonego
 // z dwóch innych punktów AB
 // Ta funkcja jest potrzebna przy odrzucaniu punktów które znajdą się w środku (po połączeniu skrajnych punktów)
-// wtedy każdy wierzchołek tak powstałej figury będzie miał te punkty po swojej prawej stronie 
+// wtedy każdy wierzchołek tak powstałej figury 2D będzie miał te punkty po swojej prawej stronie 
 // (albo lewej, ja zakładam konwencję że figura jest tworzona zgodnie z ruchem wskazówek zegara)
 // oraz do wyznaczania najkrótkszej ścieżki (wtedy szukamy punktów najbardziej na lewo)
 float crossProduct(const Point& A, const Point& B, const Point& P)
@@ -258,7 +262,7 @@ std::vector<Point> filterOutInsidePoints(const std::vector<Point>& points, const
 
     for(const auto& p : points)
     {
-        // Punkty skrajne należa do obwódki
+        // Punkty skrajne należa do ścieżki
         if(p.id == A.id || p.id == B.id || p.id == C.id || p.id == D.id)
         {
             filteredPoints.push_back(p);

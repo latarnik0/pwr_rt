@@ -4,7 +4,8 @@
 #include <string>
 #include <sstream>
 
-const std::string PATH_TO_FILE = "/home/latarnik3/pwr_rt/zad2/car_position.csv";
+// ścieżka do pliku z danymi
+const std::string PATH_TO_FILE = "car_position.csv";
 
 struct Position
 {

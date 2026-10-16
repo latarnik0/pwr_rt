@@ -1,7 +1,7 @@
 ## Instrukcje uruchomienia
 Do uruchomienia potrzebny będzie jedynie kompilator *g++*
 1. Sklonuj repozytorium
-2. Podmień ścieżki plików w obu zadaniach na samej górze
+2. Podmień globalne ścieżki plików z danymi w obu plikach .cpp na bezwzględne ścieżki w twoim środowisku
 3. Zapisz zmiany
 4. Będąc w katalogu projektu otwórz terminal
 3. Skompiluj oba programy

@@ -4,6 +4,9 @@
 #include <string>
 #include <sstream>
 
+std::string PATH_S1 = "/home/latarnik3/pwr_rt/zad2/sensor1.csv";
+std::string PATH_S2 = "/home/latarnik3/pwr_rt/zad2/sensor2.csv";
+
 struct sensorData 
 {
     std::vector<double> t, x, y;
@@ -38,8 +41,8 @@ sensorData readSensorReadings(const std::string& sensor)
 }
 
 int main() {
-    sensorData sensor1 = readSensorReadings("/home/latarnik3/pwr_rt/zad2/sensor1.csv");
-    sensorData sensor2 = readSensorReadings("/home/latarnik3/pwr_rt/zad2/sensor2.csv");
+    sensorData sensor1 = readSensorReadings(PATH_S1);
+    sensorData sensor2 = readSensorReadings(PATH_S2);
 
     std::vector<double> errorX, errorY, timestampSensor2;
     return 0;

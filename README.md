@@ -1,28 +1,17 @@
 ## Instrukcje uruchomienia
 Do uruchomienia potrzebny będzie jedynie kompilator *g++*
 1. Sklonuj repozytorium
-2. Będąc w katalogu projektu otwórz terminal
-3. Skompiluj oba programy (flaga kompilacji nie jest obowiązkowa)
+2. Podmień ścieżki plików w obu zadaniach na samej górze
+3. Zapisz zmiany
+4. Będąc w katalogu projektu otwórz terminal
+3. Skompiluj oba programy
 
 `g++ zad1/zad1solution.cpp -o zad1`
 
 `g++ zad2/zad2solution.cpp -o zad2`
 
 4. Uruchom programy
+
 `./zad1`
 
 `./zad2`
-
-## Zadanie 1
-
-### 1.1
-
-### 1.2
-
-## Zadanie 2
-
-### 2.1
-
-### 2.2
-
-## Wykorzystane narzędzia

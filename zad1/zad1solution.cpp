@@ -430,11 +430,22 @@ int main()
     calculateDistances(points, M);
     std::vector<std::vector<int>> result = collectAllToBeMergedVectors(points);
     std::vector<Point> mergedPoints = merge(points, result);
+    
+    for(auto p : mergedPoints)
+    {
+        std::cout<<p.id<<" "<<p.x<<" "<<p.y<<"\n";
+    }
     updateOriginalPoints(points, result, mergedPoints);
 
     // ZAD 1.2
     std::vector<Point> outline = getShortestOutline(points);
-    float lengthOfOutline = calculateOutlineLength(outline);
+    std::cout<<"[";
+    for(auto o : outline)
+    {
+        std::cout<<o.id<<" ";
+    }
+    std::cout<<"]"<<"\n";
+    std::cout<<calculateOutlineLength(outline);
 
     return 0;
 }
